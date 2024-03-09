@@ -1,1 +1,2 @@
 C:\Users\EmTea\source\repos\Rocnikovec\x64\Debug\Rocnikovec.exe
+C:\Users\EmTea\source\repos\zaloha\Rocnikovec\x64\Debug\Rocnikovec.exe
