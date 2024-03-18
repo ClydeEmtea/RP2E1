@@ -31,17 +31,18 @@ void LightCube::initVertices()
     float x = position.x;
     float y = position.y;
     float z = position.z;
+    float height = 3.0f; // Height of the pole
 
     vertices =
     {
-        x - 0.1f, y + 0.1f, z + 0.1f, // 0
-        x - 0.1f, y + 0.1f, z - 0.1f, // 1
-        x + 0.1f, y + 0.1f, z - 0.1f, // 2
-        x + 0.1f, y + 0.1f, z + 0.1f, // 3
-        x - 0.1f, y - 0.1f, z + 0.1f, // 4
-        x - 0.1f, y - 0.1f, z - 0.1f, // 5
-        x + 0.1f, y - 0.1f, z - 0.1f, // 6
-        x + 0.1f, y - 0.1f, z + 0.1f  // 7
+        x - 0.1f, y + height, z + 0.1f, // 0
+        x - 0.1f, y + height, z - 0.1f, // 1
+        x + 0.1f, y + height, z - 0.1f, // 2
+        x + 0.1f, y + height, z + 0.1f, // 3
+        x - 0.1f, y, z + 0.1f, // 4
+        x - 0.1f, y, z - 0.1f, // 5
+        x + 0.1f, y, z - 0.1f, // 6
+        x + 0.1f, y, z + 0.1f  // 7
     };
 }
 

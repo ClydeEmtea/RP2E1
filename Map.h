@@ -17,6 +17,7 @@ private:
     void initMap();
     void createMaze(int x, int y);
     void shuffleArray(int** directions);
+    void setFinish();
 
     int length, width;
 };

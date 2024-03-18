@@ -23,6 +23,8 @@ uniform vec3 lightPos;
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
 
+uniform float near;
+
 
 vec4 pointLight()
 {	
@@ -48,8 +50,8 @@ vec4 pointLight()
 }
 
 
-float near = 0.1f;
-float far = 50.0f;
+
+float far = 100.0f;
 float linearizeDepth(float depth)
 {
 	float z = depth * 2.0f - 1.0f;  
@@ -67,5 +69,5 @@ void main()
 	// outputs final color
 	// FragColor = pointLight();
 	float depth = logisticsDepth(gl_FragCoord.z);
-	FragColor = pointLight() * (1.0f - depth) + vec4(depth * vec3(0.01f, 0.01f, 0.02f), 1.0f);
+	FragColor = pointLight() * 1.3f * (1.0f - depth) + vec4(depth * vec3(0.01f, 0.01f, 0.02f), 1.0f);
 }

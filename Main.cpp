@@ -15,6 +15,7 @@
 #include"Cube.h"
 #include"LightCube.h"
 #include "Map.h"
+#include"Floor.h"
 
 
 const unsigned int width = 1200;
@@ -23,6 +24,21 @@ const unsigned int height = 800;
 std::vector<Cube> cubes;
 std::vector<LightCube> lightCubes;
 
+enum class GameState
+{
+	MainMenu, Game, GameOver
+};
+
+GameState gameState = GameState::Game;
+
+void renderMainMenu(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+	{
+		gameState = GameState::Game;
+		glfwSetCursorPos(window, (width / 2), (height / 2));
+	}
+}
 
 int main()
 {
@@ -37,8 +53,8 @@ int main()
 	// So that means we only have the modern functions
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
-	GLFWwindow* window = glfwCreateWindow(width, height, "YoutubeOpenGL", NULL, NULL);
+	// Create a GLFWwindow object
+	GLFWwindow* window = glfwCreateWindow(width, height, "OpenGL", NULL, NULL);
 	// Error check if the window fails to create
 	if (window == NULL)
 	{
@@ -60,9 +76,11 @@ int main()
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader shaderProgram("default.vert", "default.frag");
 
-	int mapLength = 30;
-	int mapWidth = 30;
+	int mapLength = 40;
+	int mapWidth = 40;
 	Map maze(mapLength, mapWidth);
+
+	Floor floor(0.5f, -1.5f, mapWidth - 0.5f, mapWidth, mapLength);
 
 	// Generates Vertex Array Object and binds it
 	for (int i = 0; i < mapLength; i++)
@@ -72,6 +90,10 @@ int main()
 			if (maze.map[i][j] == 1)
 			{
 				cubes.emplace_back(j, 0, i);
+			}
+			if (maze.map[i][j] == 2)
+			{
+				lightCubes.emplace_back((glm::vec3(j, -2.0f, i)));
 			}
 			if (i == 0 || j == 0)
 			{
@@ -85,20 +107,18 @@ int main()
 	}
 	// Shader for light cube
 	Shader lightShader("light.vert", "light.frag");
-	// Generates Vertex Array Object and binds it
-	LightCube lightCube(glm::vec3(0.0f, 3.5f, 0.0f));
+
+	Camera camera(width, height, glm::vec3(3.0f, -1.0f, 2.0f), cubes);
 
 
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPos = lightCube.position;
+	glm::vec3 lightPos = camera.Position;
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
 
 	glm::vec3 objectPos = cubes[0].position;
 	glm::mat4 objectModel = cubes[0].model;
 	objectModel = glm::translate(objectModel, objectPos);
-
-
 
 
 	lightShader.Activate();
@@ -123,8 +143,8 @@ int main()
 	glDepthFunc(GL_LESS);
 
 	// Creates camera object
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
+	glUniform1f(glGetUniformLocation(shaderProgram.ID, "near"), camera.nearPlane);
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
@@ -132,49 +152,65 @@ int main()
 		// Specify the color of the background
 		glClearColor(0.01f, 0.01f, 0.02f, 1.0f);
 
-
-		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Handles camera inputs
-		camera.Inputs(window);
-		// Updates and exports the camera matrix to the Vertex Shader
-		camera.updateMatrix(45.0f, 0.1f, 100.0f);
-		lightPos = camera.Position;
-		lightPos.y += 1.5f;
-
-		// Tells OpenGL which Shader Program we want to use
-		shaderProgram.Activate();
-		glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-
-		// Exports the camera Position to the Fragment Shader for specular lighting
-		glUniform3f(glGetUniformLocation(shaderProgram.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-		// Export the camMatrix to the Vertex Shader of the pyramid
-		camera.Matrix(shaderProgram, "camMatrix");
-
-		// Bind the VAO so OpenGL knows to use it
-
-		for (int i = 0; i < cubes.size(); i++)
+		if (gameState == GameState::MainMenu)
 		{
-			if (cubes[i].texNum != 1)
-			{
-				brickTex.Bind();
-			}
-			else
-			{
-				popCat.Bind();
-			}
-			cubes[i].Draw(shaderProgram);
+			renderMainMenu(window);
 		}
+		else if (gameState == GameState::Game)
+		{
+			// Handles camera inputs
+			camera.Inputs(window);
+			// Updates and exports the camera matrix to the Vertex Shader
+			camera.updateMatrix(45.0f, 0.1f, 100.0f);
+			lightPos = camera.Position;
+			lightPos.y += 1.5f;
+
+			// Tells OpenGL which Shader Program we want to use
+			shaderProgram.Activate();
+			glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
+			// Exports the camera Position to the Fragment Shader for specular lighting
+			glUniform3f(glGetUniformLocation(shaderProgram.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+
+			glUniform1f(glGetUniformLocation(shaderProgram.ID, "near"), camera.nearPlane);
+
+			// Export the camMatrix to the Vertex Shader of the pyramid
+			camera.Matrix(shaderProgram, "camMatrix");
+
+			// Bind the VAO so OpenGL knows to use it
+			brickTex.Bind();
+
+			floor.Draw(shaderProgram);
+
+			for (int i = 0; i < cubes.size(); i++)
+			{
+				if (cubes[i].texNum != 1)
+				{
+					brickTex.Bind();
+				}
+				else
+				{
+					popCat.Bind();
+				}
+				cubes[i].Draw(shaderProgram);
+			}
+
+			if ((camera.Position.x >= lightCubes[0].position.x - 0.5f && camera.Position.x <= lightCubes[0].position.x + 0.5f) &&
+				(camera.Position.z >= lightCubes[0].position.z - 0.5f && camera.Position.z <= lightCubes[0].position.z + 0.5f))
+			{
+				gameState = GameState::GameOver;
+			}
 
 
-
-		// Tells OpenGL which Shader Program we want to use
-		lightShader.Activate();
-		// Export the camMatrix to the Vertex Shader of the light cube
-		camera.Matrix(lightShader, "camMatrix");
-		// Bind the VAO so OpenGL knows to use it
-		lightCube.Draw(lightShader);
+			// Tells OpenGL which Shader Program we want to use
+			lightShader.Activate();
+			// Export the camMatrix to the Vertex Shader of the light cube
+			camera.Matrix(lightShader, "camMatrix");
+			// Bind the VAO so OpenGL knows to use it
+			lightCubes[0].Draw(lightShader);
+		}
 
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
@@ -191,7 +227,6 @@ int main()
 	}
 	brickTex.Delete();
 	shaderProgram.Delete();
-	lightCube.VAO1.Delete();
 	lightShader.Delete();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
